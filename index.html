@@ -1,0 +1,678 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AAC Communication Board</title>
+    <style>
+      :root {
+        --bg: #f7f5ef;
+        --panel: rgba(255, 255, 255, 0.86);
+        --panel-strong: #ffffff;
+        --text: #22303b;
+        --muted: #64707a;
+        --accent: #7ca9a1;
+        --accent-2: #f3d28b;
+        --accent-3: #d9a7a7;
+        --accent-4: #a7bfd9;
+        --accent-5: #bfd8b4;
+        --shadow: 0 18px 50px rgba(43, 57, 68, 0.10);
+        --radius: 24px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html[dir="rtl"] body {
+        direction: rtl;
+      }
+
+      body {
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+        background:
+          radial-gradient(circle at top left, rgba(124, 169, 161, 0.20), transparent 28%),
+          radial-gradient(circle at top right, rgba(243, 210, 139, 0.26), transparent 24%),
+          radial-gradient(circle at bottom left, rgba(167, 191, 217, 0.18), transparent 25%),
+          var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+      }
+
+      .app {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+
+      header {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        align-items: end;
+        justify-content: space-between;
+        margin-bottom: 18px;
+      }
+
+      .title-block h1 {
+        margin: 0;
+        font-size: clamp(2rem, 4vw, 3.2rem);
+        letter-spacing: -0.04em;
+      }
+
+      .title-block p {
+        margin: 10px 0 0;
+        color: var(--muted);
+        max-width: 60ch;
+        line-height: 1.5;
+      }
+
+      .controls {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        align-items: center;
+      }
+
+      .chip,
+      .action {
+        border: 0;
+        border-radius: 999px;
+        padding: 16px 22px;
+        font-size: 1.06rem;
+        cursor: pointer;
+        box-shadow: var(--shadow);
+        transition: transform 140ms ease, filter 140ms ease, background 140ms ease;
+      }
+
+      .chip {
+        background: rgba(255, 255, 255, 0.78);
+        color: var(--text);
+      }
+
+      .action {
+        background: var(--accent);
+        color: #fff;
+        font-weight: 700;
+      }
+
+      .chip:hover,
+      .action:hover,
+      .tile:hover {
+        transform: translateY(-2px);
+      }
+
+      .chip:focus-visible,
+      .action:focus-visible,
+      .tile:focus-visible {
+        outline: 4px solid rgba(124, 169, 161, 0.35);
+        outline-offset: 3px;
+      }
+
+      .board-shell {
+        background: var(--panel);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(34, 48, 59, 0.08);
+        border-radius: 30px;
+        padding: 18px;
+        box-shadow: var(--shadow);
+      }
+
+      .language-switcher {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .language-switcher {
+        margin-bottom: 14px;
+      }
+
+      .tab {
+        border: 0;
+        border-radius: 999px;
+        padding: 14px 20px;
+        font-size: 1.05rem;
+        cursor: pointer;
+        background: rgba(255, 255, 255, 0.8);
+        color: var(--text);
+        box-shadow: var(--shadow);
+      }
+
+      .tab.active {
+        background: var(--accent);
+        color: #fff;
+        font-weight: 700;
+      }
+
+      .board-intro {
+        margin-bottom: 14px;
+      }
+
+      .board-intro h2 {
+        margin: 0;
+        font-size: 1.15rem;
+      }
+
+      .board-intro p {
+        margin: 6px 0 0;
+        color: var(--muted);
+      }
+
+      .sentence {
+        background: var(--panel-strong);
+        border-radius: var(--radius);
+        padding: 18px;
+        margin-bottom: 16px;
+        border: 1px solid rgba(34, 48, 59, 0.08);
+      }
+
+      .sentence-label {
+        margin: 0 0 10px;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      .sentence-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        min-height: 72px;
+        align-items: center;
+      }
+
+      .word-pill {
+        border: 0;
+        border-radius: 999px;
+        background: #edf4f0;
+        color: var(--text);
+        padding: 16px 20px;
+        font-size: 1.05rem;
+        cursor: pointer;
+      }
+
+      .word-pill.remove {
+        background: #f8ece9;
+      }
+
+      .sentence-empty {
+        color: var(--muted);
+      }
+
+      .board {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(12, 1fr);
+      }
+
+      .section {
+        grid-column: span 12;
+      }
+
+      .section h2 {
+        margin: 0 0 12px;
+        font-size: 1.15rem;
+      }
+
+      .tile-grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      }
+
+      .tile {
+        border: 0;
+        border-radius: 28px;
+        min-height: 178px;
+        padding: 20px;
+        text-align: left;
+        cursor: pointer;
+        color: var(--text);
+        box-shadow: 0 10px 26px rgba(43, 57, 68, 0.09);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 14px;
+      }
+
+      .tile .icon {
+        width: 78px;
+        height: 78px;
+        display: grid;
+        place-items: center;
+        font-size: 3rem;
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.62);
+      }
+
+      .tile .label {
+        font-size: 1.62rem;
+        font-weight: 800;
+        line-height: 1.05;
+      }
+
+      .tile .hint {
+        font-size: 1rem;
+        opacity: 0.82;
+      }
+
+      .number-symbol {
+        font-size: 3.35rem;
+        font-weight: 800;
+        line-height: 1;
+      }
+
+      .food { background: linear-gradient(180deg, #fff8dd, #f5e6b5); }
+      .people { background: linear-gradient(180deg, #eef4ff, #dce7f7); }
+      .yesno { background: linear-gradient(180deg, #eef7f0, #dcefdc); }
+      .toilet { background: linear-gradient(180deg, #fff0ea, #f7dacf); }
+      .help { background: linear-gradient(180deg, #f7f4ff, #e6dcff); }
+      .basic { background: linear-gradient(180deg, #f3f9f8, #dcebe7); }
+      .numbers { background: linear-gradient(180deg, #f9f3ea, #eadfce); }
+
+      .tiny-note {
+        margin-top: 16px;
+        color: var(--muted);
+        font-size: 0.95rem;
+        line-height: 1.45;
+      }
+
+      @media (max-width: 720px) {
+        .app {
+          padding: 16px;
+        }
+
+        .board-shell {
+          padding: 14px;
+          border-radius: 24px;
+        }
+
+        .tile {
+          min-height: 144px;
+        }
+      }
+
+      @media (min-width: 768px) and (max-width: 1180px) {
+        .tile-grid {
+          grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        }
+
+        .tile {
+          min-height: 196px;
+          padding: 22px;
+        }
+
+        .tile .icon {
+          width: 84px;
+          height: 84px;
+          font-size: 3.2rem;
+        }
+
+        .tile .label {
+          font-size: 1.75rem;
+        }
+
+        .tile .hint {
+          font-size: 1.02rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <header>
+        <div class="title-block">
+          <h1 id="pageTitle">لوحة التواصل</h1>
+          <p id="pageDescription">اضغط على أي مربع لإضافة الكلمة إلى الجملة وسماعها بصوت. هذه النسخة الأولى بسيطة ومناسبة للأكل، الأشخاص، نعم أو لا، الحمام، والأرقام.</p>
+        </div>
+        <div class="controls">
+          <button class="chip" id="speakSentence" type="button">تكلم الجملة</button>
+          <button class="chip" id="clearSentence" type="button">مسح اللوحة</button>
+        </div>
+      </header>
+
+      <section class="board-shell" aria-label="AAC communication board">
+        <div class="language-switcher" aria-label="Language switcher">
+          <button class="tab active" id="langArabic" type="button">العربية</button>
+          <button class="tab" id="langDarija" type="button">الدارجة المغربية</button>
+        </div>
+
+        <div class="sentence" aria-live="polite">
+          <p class="sentence-label" id="sentenceLabel">جملتي</p>
+          <div class="sentence-row" id="sentenceRow">
+            <span class="sentence-empty" id="sentenceEmpty">لم يتم اختيار كلمات بعد.</span>
+          </div>
+        </div>
+
+        <div class="board-intro">
+          <div>
+            <h2 id="categoryTitle">كل الكلمات في نفس الصفحة</h2>
+            <p id="categoryHelp">اضغط على أي مربع ليضاف إلى الجملة ويُقرأ بصوت. ما كاينش اختيار بين الأقسام.</p>
+          </div>
+        </div>
+
+        <div class="board">
+          <section class="section" data-group="food">
+            <h2 id="foodHeading">الأكل</h2>
+            <div class="tile-grid"></div>
+          </section>
+
+          <section class="section" data-group="people">
+            <h2 id="peopleHeading">الأشخاص</h2>
+            <div class="tile-grid"></div>
+          </section>
+
+          <section class="section" data-group="yesno">
+            <h2 id="yesNoHeading">نعم / لا</h2>
+            <div class="tile-grid"></div>
+          </section>
+
+          <section class="section" data-group="basic">
+            <h2 id="basicHeading">الاحتياجات</h2>
+            <div class="tile-grid"></div>
+          </section>
+
+          <section class="section" data-group="numbers">
+            <h2 id="numbersHeading">الأرقام</h2>
+            <div class="tile-grid"></div>
+          </section>
+        </div>
+
+        <p class="tiny-note" id="tinyNote">يمكن تطوير هذه الصفحة لاحقًا إلى لوحة AAC أكبر مع كلمات أكثر وأصوات وصور حقيقية.</p>
+      </section>
+    </main>
+
+    <script>
+      const categories = ["food", "people", "yesno", "basic", "numbers"];
+
+      const languageData = {
+        arabic: {
+          dir: "rtl",
+          title: "لوحة التواصل",
+          description: "اضغط على أي مربع لإضافة الكلمة إلى الجملة وسماعها بصوت. كل الكلمات ظاهرة في نفس الصفحة، من غير تبويب ولا اختيار.",
+          sentenceLabel: "جملتي",
+          emptySentence: "لم يتم اختيار كلمات بعد.",
+          speakButton: "تكلم الجملة",
+          resetButton: "مسح اللوحة",
+          categoryHelp: "اضغط على المربع ليضاف إلى الجملة ويُقرأ بصوت.",
+          tinyNote: "يمكن تطوير هذه الصفحة لاحقًا إلى لوحة AAC أكبر مع كلمات أكثر وأصوات وصور حقيقية.",
+          speakLang: "ar",
+          headings: {
+            food: "الأكل",
+            people: "الأشخاص",
+            yesno: "نعم / لا",
+            basic: "الاحتياجات",
+            numbers: "الأرقام"
+          },
+          tiles: {
+            food: [
+              { word: "ماء", emoji: "💧", colorClass: "food", phrase: "أريد ماء." },
+              { word: "أكل", emoji: "🍽️", colorClass: "food", phrase: "أريد الأكل." },
+              { word: "فاكهة", emoji: "🍎", colorClass: "food", phrase: "أريد فاكهة." },
+              { word: "سناك", emoji: "🍪", colorClass: "food", phrase: "أريد سناك." }
+            ],
+            people: [
+                { word: "فاتحة", emoji: "👩", colorClass: "people", phrase: "أريد فاتحة." },
+              { word: "إيمان", emoji: "👨", colorClass: "people", phrase: "أريد إيمان." },
+              { word: "مساعدة", emoji: "🙋", colorClass: "help", phrase: "أحتاج مساعدة." }
+            ],
+            yesno: [
+              { word: "نعم", emoji: "👍", colorClass: "yesno", phrase: "نعم." },
+              { word: "لا", emoji: "👎", colorClass: "yesno", phrase: "لا." },
+              { word: "ممكن", emoji: "🤔", colorClass: "yesno", phrase: "ممكن." },
+              { word: "مرة أخرى", emoji: "🔁", colorClass: "yesno", phrase: "مرة أخرى." }
+            ],
+            basic: [
+              { word: "المرحاض", emoji: "🚻", colorClass: "toilet", phrase: "أحتاج المرحاض." },
+              { word: "ألم", emoji: "🩹", colorClass: "toilet", phrase: "عندي ألم." },
+              { word: "تعبان", emoji: "😴", colorClass: "basic", phrase: "أنا تعبان." },
+              { word: "قف", emoji: "✋", colorClass: "basic", phrase: "قف من فضلك." }
+            ],
+            numbers: [
+              { word: "0", label: "صفر", emoji: "0", colorClass: "numbers", phrase: "صفر" },
+              { word: "1", label: "واحد", emoji: "1", colorClass: "numbers", phrase: "واحد" },
+              { word: "2", label: "اثنان", emoji: "2", colorClass: "numbers", phrase: "اثنان" },
+              { word: "3", label: "ثلاثة", emoji: "3", colorClass: "numbers", phrase: "ثلاثة" },
+              { word: "4", label: "أربعة", emoji: "4", colorClass: "numbers", phrase: "أربعة" },
+              { word: "5", label: "خمسة", emoji: "5", colorClass: "numbers", phrase: "خمسة" },
+              { word: "6", label: "ستة", emoji: "6", colorClass: "numbers", phrase: "ستة" },
+              { word: "7", label: "سبعة", emoji: "7", colorClass: "numbers", phrase: "سبعة" },
+              { word: "8", label: "ثمانية", emoji: "8", colorClass: "numbers", phrase: "ثمانية" },
+              { word: "9", label: "تسعة", emoji: "9", colorClass: "numbers", phrase: "تسعة" }
+            ]
+          }
+        },
+        darija: {
+          dir: "rtl",
+          title: "لوحة التواصل",
+          description: "ضغط على أي مربع باش تزيد الكلمة للجملة وتسمعها بصوت. الكل باين ف نفس الصفحة، بلا تبويب وبلا اختيار.",
+          sentenceLabel: "الجملة ديالي",
+          emptySentence: "مازال ما تْختارت حتى كلمة.",
+          speakButton: "يهضر الجملة",
+          resetButton: "مسح اللوحة",
+          categoryHelp: "ضغط على المربع باش يتزاد للجملة ويتقرا بصوت.",
+          tinyNote: "يمكن نزيدو لاحقًا كلمات وصور وأصوات حقيقية باش تولّي لوحة AAC أكبر.",
+          speakLang: "ar-MA",
+          headings: {
+            food: "الماكلة",
+            people: "الناس",
+            yesno: "آه / لا",
+            basic: "الحاجات",
+            numbers: "العداد"
+          },
+          tiles: {
+            food: [
+              { word: "ما", emoji: "💧", colorClass: "food", phrase: "بغيت ما." },
+              { word: "ماكلة", emoji: "🍽️", colorClass: "food", phrase: "بغيت الماكلة." },
+              { word: "فواكه", emoji: "🍎", colorClass: "food", phrase: "بغيت فواكه." },
+              { word: "سناك", emoji: "🍪", colorClass: "food", phrase: "بغيت سناك." }
+            ],
+            people: [
+                { word: "فاتحة", emoji: "👩", colorClass: "people", phrase: "بغيت فاتحة." },
+              { word: "إيمان", emoji: "👨", colorClass: "people", phrase: "بغيت إيمان." },
+              { word: "مساعدة", emoji: "🙋", colorClass: "help", phrase: "خصني المساعدة." }
+            ],
+            yesno: [
+              { word: "آه", emoji: "👍", colorClass: "yesno", phrase: "آه." },
+              { word: "لا", emoji: "👎", colorClass: "yesno", phrase: "لا." },
+              { word: "يمكن", emoji: "🤔", colorClass: "yesno", phrase: "يمكن." },
+              { word: "مرة أخرى", emoji: "🔁", colorClass: "yesno", phrase: "مرة أخرى." }
+            ],
+            basic: [
+              { word: "طواليط", emoji: "🚻", colorClass: "toilet", phrase: "خصني الطواليط." },
+              { word: "وجع", emoji: "🩹", colorClass: "toilet", phrase: "عندي الوجع." },
+              { word: "عيّان", emoji: "😴", colorClass: "basic", phrase: "أنا عيّان." },
+              { word: "وقف", emoji: "✋", colorClass: "basic", phrase: "وقف من فضلك." }
+            ],
+            numbers: [
+              { word: "0", label: "صفر", emoji: "0", colorClass: "numbers", phrase: "صفر" },
+              { word: "1", label: "واحد", emoji: "1", colorClass: "numbers", phrase: "واحد" },
+              { word: "2", label: "جوج", emoji: "2", colorClass: "numbers", phrase: "جوج" },
+              { word: "3", label: "ثلاثة", emoji: "3", colorClass: "numbers", phrase: "ثلاثة" },
+              { word: "4", label: "ربعة", emoji: "4", colorClass: "numbers", phrase: "ربعة" },
+              { word: "5", label: "خمسة", emoji: "5", colorClass: "numbers", phrase: "خمسة" },
+              { word: "6", label: "ستة", emoji: "6", colorClass: "numbers", phrase: "ستة" },
+              { word: "7", label: "سبعة", emoji: "7", colorClass: "numbers", phrase: "سبعة" },
+              { word: "8", label: "تمانْية", emoji: "8", colorClass: "numbers", phrase: "ثمانية" },
+              { word: "9", label: "تسعة", emoji: "9", colorClass: "numbers", phrase: "تسعة" }
+            ]
+          }
+        }
+      };
+
+      const sentence = [];
+      const state = {
+        language: "arabic",
+      };
+
+      const sentenceRow = document.getElementById("sentenceRow");
+      const sentenceEmpty = document.getElementById("sentenceEmpty");
+      const synth = window.speechSynthesis;
+      const pageTitle = document.getElementById("pageTitle");
+      const pageDescription = document.getElementById("pageDescription");
+      const sentenceLabel = document.getElementById("sentenceLabel");
+      const categoryTitle = document.getElementById("categoryTitle");
+      const categoryHelp = document.getElementById("categoryHelp");
+      const tinyNote = document.getElementById("tinyNote");
+      const speakSentenceButton = document.getElementById("speakSentence");
+      const clearSentenceButton = document.getElementById("clearSentence");
+      const langArabicButton = document.getElementById("langArabic");
+      const langDarijaButton = document.getElementById("langDarija");
+      const headingMap = {
+        food: document.getElementById("foodHeading"),
+        people: document.getElementById("peopleHeading"),
+        yesno: document.getElementById("yesNoHeading"),
+        basic: document.getElementById("basicHeading"),
+        numbers: document.getElementById("numbersHeading")
+      };
+
+      function speak(text) {
+        if (!text || !synth) return;
+        synth.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.92;
+        utterance.pitch = 1;
+        utterance.lang = languageData[state.language].speakLang;
+        synth.speak(utterance);
+      }
+
+      function getCurrentLanguage() {
+        return languageData[state.language];
+      }
+
+      function getCategoryTiles(category) {
+        return getCurrentLanguage().tiles[category] || [];
+      }
+
+      function setLanguage(language) {
+        state.language = language;
+        const current = getCurrentLanguage();
+        document.documentElement.lang = language === "darija" ? "ar" : "ar";
+        document.documentElement.dir = current.dir;
+        pageTitle.textContent = current.title;
+        pageDescription.textContent = current.description;
+        sentenceLabel.textContent = current.sentenceLabel;
+        sentenceEmpty.textContent = current.emptySentence;
+        speakSentenceButton.textContent = current.speakButton;
+        clearSentenceButton.textContent = current.resetButton;
+        categoryHelp.textContent = current.categoryHelp;
+        tinyNote.textContent = current.tinyNote;
+        langArabicButton.classList.toggle("active", language === "arabic");
+        langDarijaButton.classList.toggle("active", language === "darija");
+        categoryTitle.textContent = current.title === "لوحة التواصل" ? "كل الكلمات في نفس الصفحة" : "جميع الكلمات ف نفس الصفحة";
+        headingMap.food.textContent = current.headings.food;
+        headingMap.people.textContent = current.headings.people;
+        headingMap.yesno.textContent = current.headings.yesno;
+        headingMap.basic.textContent = current.headings.basic;
+        headingMap.numbers.textContent = current.headings.numbers;
+        renderTiles();
+        refreshSentence();
+      }
+
+      function refreshSentence() {
+        sentenceRow.innerHTML = "";
+
+        if (!sentence.length) {
+          sentenceRow.appendChild(sentenceEmpty);
+          sentenceEmpty.hidden = false;
+          return;
+        }
+
+        sentenceEmpty.hidden = true;
+
+        sentence.forEach((item, index) => {
+          const pill = document.createElement("button");
+          pill.type = "button";
+          pill.className = "word-pill";
+          pill.textContent = item.word;
+          pill.title = item.removeLabel;
+          pill.addEventListener("click", () => {
+            sentence.splice(index, 1);
+            refreshSentence();
+            speak(sentence.map((word) => word.phrase || word.word).join(" "));
+          });
+          sentenceRow.appendChild(pill);
+        });
+
+        const speakButton = document.createElement("button");
+        speakButton.type = "button";
+        speakButton.className = "word-pill";
+        speakButton.textContent = getCurrentLanguage().speakButton;
+        speakButton.addEventListener("click", () => {
+          speak(sentence.map((item) => item.phrase || item.word).join(" "));
+        });
+        sentenceRow.appendChild(speakButton);
+
+        const clearButton = document.createElement("button");
+        clearButton.type = "button";
+        clearButton.className = "word-pill remove";
+        clearButton.textContent = getCurrentLanguage().resetButton;
+        clearButton.addEventListener("click", () => {
+          sentence.length = 0;
+          refreshSentence();
+        });
+        sentenceRow.appendChild(clearButton);
+      }
+
+      function renderTiles() {
+        document.querySelectorAll(".section").forEach((section) => {
+          const group = section.dataset.group;
+          const grid = section.querySelector(".tile-grid");
+          const groupTiles = getCategoryTiles(group);
+          grid.innerHTML = "";
+
+          groupTiles.forEach((tileData) => {
+            const tile = document.createElement("button");
+            tile.type = "button";
+            tile.className = "tile " + tileData.colorClass;
+            const label = tileData.label || tileData.word;
+            const hint = getCurrentLanguage().speakButton;
+            tile.innerHTML = group === "numbers"
+              ? `
+                <div class="icon number-symbol" aria-hidden="true">${tileData.emoji}</div>
+                <div>
+                  <div class="label">${label}</div>
+                  <div class="hint">${hint}</div>
+                </div>
+              `
+              : `
+                <div class="icon" aria-hidden="true">${tileData.emoji}</div>
+                <div>
+                  <div class="label">${label}</div>
+                  <div class="hint">${hint}</div>
+                </div>
+              `;
+            tile.addEventListener("click", () => {
+              sentence.push({
+                word: label,
+                phrase: tileData.phrase,
+                removeLabel: `${label}`
+              });
+              refreshSentence();
+              speak(tileData.phrase || tileData.word);
+            });
+            grid.appendChild(tile);
+          });
+        });
+      }
+
+      document.getElementById("speakSentence").addEventListener("click", () => {
+        const phrase = sentence.map((item) => item.phrase || item.word).join(" ");
+        speak(phrase || getCurrentLanguage().emptySentence);
+      });
+
+      document.getElementById("clearSentence").addEventListener("click", () => {
+        sentence.length = 0;
+        refreshSentence();
+      });
+
+      langArabicButton.addEventListener("click", () => setLanguage("arabic"));
+      langDarijaButton.addEventListener("click", () => setLanguage("darija"));
+
+      renderTiles();
+      setLanguage("arabic");
+    </script>
+  </body>
+</html>
